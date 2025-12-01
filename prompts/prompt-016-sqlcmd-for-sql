@@ -1,0 +1,19 @@
+Use sqlcmd (the modern go-sqlcmd tool) for all database operations. Do not use Python scripts for SQL execution.
+
+The deployment script (deploy-infra/deploy.ps1) handles all database operations automatically including schema import, managed identity user creation, role assignments, and stored procedure deployment.
+
+For manual execution or troubleshooting, use sqlcmd with --authentication-method=ActiveDirectoryDefault for Entra ID authentication.
+
+Critical PowerShell syntax note: When calling sqlcmd from PowerShell, the --authentication-method argument must be quoted to prevent PowerShell from misinterpreting the double-dash as a stop-parsing token:
+
+    sqlcmd -S $serverFqdn -d "Northwind" "--authentication-method=ActiveDirectoryDefault" -i $schemaFile
+
+Without quotes, PowerShell may produce the error: "'-' or '/' does not have an associated argument."
+
+To install go-sqlcmd on Windows: winget install sqlcmd
+
+Important: VS Code's integrated terminal may use a cached PATH that points to the legacy ODBC sqlcmd instead of the modern go-sqlcmd. If you encounter errors about unrecognized arguments, either restart VS Code completely or run the deployment from a standalone PowerShell terminal.
+
+The sqlcmd tool handles GO batch separators natively, which is essential for SQL Server scripts that contain multiple batches.
+
+

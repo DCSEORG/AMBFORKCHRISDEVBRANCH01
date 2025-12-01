@@ -1,25 +1,3 @@
-create a python file called run-sql with the contents below, 
-changing the server and database variables at the top to those created earlier in the process.
-If you were not asked to create them then leave them as is.
-
-bear in mind making it work on Mac as well:
-
-Not cross platform:
-sed -i "s/MANAGED-IDENTITY-NAME/$MANAGED_IDENTITY_NAME/g" script.sql
-
-Works cross platform (ie for Mac)
-sed -i.bak "s/MANAGED-IDENTITY-NAME/$MANAGED_IDENTITY_NAME/g" script.sql && rm -f script.sql.bak
-
-also update the deploy.sh file to add this:
-
-# Install required Python packages if not already installed
-pip3 install --quiet pyodbc azure-identity
-
-# Run the Python script
-python3 run-sql.py
-
-Python file contents:
-
 #!/usr/bin/env python3
 """
 Execute SQL script on Azure SQL Database using Azure Active Directory authentication
@@ -28,9 +6,9 @@ import pyodbc
 import struct
 from azure.identity import AzureCliCredential
 
-# Database connection settings
-SERVER = "example.database.windows.net"
-DATABASE = "database_name"
+# Database connection settings - Update these values after infrastructure deployment
+SERVER = "sql-expensemgmt-UNIQUE.database.windows.net"  # Replace with actual server name
+DATABASE = "Northwind"
 SQL_SCRIPT_FILE = "Database-Schema/database_schema.sql"
 
 def get_access_token():
@@ -76,12 +54,12 @@ def execute_sql_script(server, database, script_file):
         current_statement = []
         
         for line in sql_script.split('\n'):
-            line = line.strip()
-            if line.upper() == 'GO':
+            line_stripped = line.strip()
+            if line_stripped.upper() == 'GO':
                 if current_statement:
                     statements.append('\n'.join(current_statement))
                     current_statement = []
-            elif line:
+            elif line_stripped:
                 current_statement.append(line)
         
         if current_statement:
@@ -111,4 +89,3 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n✗ Error: {e}")
         exit(1)
-

@@ -1,44 +1,15 @@
-if the database_schema.sql file has stored procedures contained in it then use those to update the code 
-as the way the app will get data in and out of the database so the app has no T-SQL in the app and hence does not connect 
-to tables in the database directly.
-
-if the database_schema.sql file does not have any stored procedures then create a file called stored-procedures.sql and write the code to create all the 
-stored procedures needed to get data in and out of the database
-such that all app code uses stored procedures and not direct SQL in the app code.
-update the app code if needed to achieve that.
-
-make sure to use "CREATE OR ALTER PROCEDURE" in case the stored procedires already exist.
-
-make sure the app code does not call any stored procedure names that do not exist in the stored-procedures.sql file to avoid hallucinations that 
-would crash the app.
-
-changing the server and database variables at the top to those created earlier in the process.
-If you were not asked to create them then leave them as is.
-
-bear in mind making it work on Mac as well,
-
-also update the deploy.sh file to add this:
-
-# Install required Python packages if not already installed
-pip3 install --quiet pyodbc azure-identity
-
-# Run the Python script
-python3 run-sql-stored-procs.py
-
-Python file contents:
-
 #!/usr/bin/env python3
 """
-Execute SQL script on Azure SQL Database using Azure Active Directory authentication
+Execute stored procedures SQL script on Azure SQL Database
 """
 import pyodbc
 import struct
 from azure.identity import AzureCliCredential
 
-# Database connection settings
-SERVER = "example.database.windows.net"
-DATABASE = "database_name"
-SQL_SCRIPT_FILE = "script.sql"
+# Database connection settings - Update these values after infrastructure deployment
+SERVER = "sql-expensemgmt-UNIQUE.database.windows.net"  # Replace with actual server name
+DATABASE = "Northwind"
+SQL_SCRIPT_FILE = "stored-procedures.sql"
 
 def get_access_token():
     """Get Azure AD access token using Azure CLI credentials"""
@@ -78,17 +49,17 @@ def execute_sql_script(server, database, script_file):
         with open(script_file, 'r') as f:
             sql_script = f.read()
         
-        # Split script into individual statements (by GO or semicolon)
+        # Split script into individual statements (by GO)
         statements = []
         current_statement = []
         
         for line in sql_script.split('\n'):
-            line = line.strip()
-            if line.upper() == 'GO':
+            line_stripped = line.strip()
+            if line_stripped.upper() == 'GO':
                 if current_statement:
                     statements.append('\n'.join(current_statement))
                     current_statement = []
-            elif line:
+            elif line_stripped:
                 current_statement.append(line)
         
         if current_statement:
@@ -107,7 +78,7 @@ def execute_sql_script(server, database, script_file):
                     print(f"  ✗ Error executing statement {i}: {e}")
                     raise
         
-        print("\n✓ All SQL statements executed successfully!")
+        print("\n✓ All stored procedures created successfully!")
         
     finally:
         conn.close()
@@ -118,5 +89,3 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n✗ Error: {e}")
         exit(1)
-
-
